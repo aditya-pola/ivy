@@ -148,8 +148,12 @@
 <span class="c1"># local</span>
 <span class="kn">import</span> <span class="nn">ivy</span>
 <span class="kn">from</span> <span class="nn">ivy</span> <span class="kn">import</span> <span class="n">to_ivy</span><span class="p">,</span> <span class="n">to_native</span>
-<span class="kn">from</span> <span class="nn">ivy.backend_handler</span> <span class="kn">import</span> <span class="n">current_backend</span>
 <span class="kn">from</span> <span class="nn">ivy.exceptions</span> <span class="kn">import</span> <span class="n">handle_exceptions</span>
+<span class="kn">from</span> <span class="nn">ivy.backend_handler</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">current_backend</span><span class="p">,</span>
+    <span class="n">_determine_backend_from_args</span><span class="p">,</span>
+    <span class="n">_backend_dict</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ivy.func_wrapper</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">infer_device</span><span class="p">,</span>
     <span class="n">infer_dtype</span><span class="p">,</span>
@@ -1676,6 +1680,19 @@
     <span class="k">return</span> <span class="n">current_backend</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span>
         <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span>
     <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_pycapsule_from_array_object</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">input_backend</span> <span class="o">=</span> <span class="n">_determine_backend_from_args</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">backend</span><span class="p">,</span> <span class="n">module_name</span> <span class="ow">in</span> <span class="n">_backend_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">input_backend</span> <span class="o">==</span> <span class="n">module_name</span><span class="p">:</span>
+                <span class="n">ivy</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+                <span class="n">capsule</span> <span class="o">=</span> <span class="n">ivy</span><span class="o">.</span><span class="n">to_dlpack</span><span class="p">(</span><span class="n">ivy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+                <span class="n">ivy</span><span class="o">.</span><span class="n">unset_backend</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">capsule</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot; does not belong to the supported frameworks&quot;</span><span class="p">)</span>
 </pre></div>
 
            </div>
